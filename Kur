@@ -1,0 +1,880 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <locale.h>
+#include <time.h>
+#include <string.h>
+#include <stdbool.h>
+
+
+typedef struct Birth_day Birthday;//Ëèíåéíûé ñïèñîê äëÿ òàáëèöû Äíè ðîæäåíèÿ
+struct Birth_day
+{
+int id;
+int day;
+int month;
+int year;
+char fio[30];
+Birthday* next;
+} ;
+typedef struct celebration Celebration;//Ëèíåéíûé ñïèñîê äëÿ òàáëèöû Ïðàçäíèêè
+typedef struct celebration
+{
+int id;
+int day;
+int month;
+char name[100];
+Celebration* next;
+} ;
+typedef struct event Event;//Ëèíåéíûé ñïèñîê äëÿ òàáëèöû Ñîáûòèÿ
+struct event
+{
+int id;
+int day;
+int month;
+int year;
+char description[100];
+Event* next;
+} ;
+
+int menu(void);
+void ReadFile(Birthday**,Celebration**,Event**,int*,int*,int*);//×òåíèå ÁÄ
+void SaveFile(Birthday*,Celebration*,Event*,int,int,int);//Ñîõðàíèå ÁÄ
+
+Birthday* initBirthdayList(int,int,int,int,char[30]);//Èíèöèàëèçàöèÿ ñïèñêà äëÿ òàáëèöû Äíè ðîæäåíèÿ
+Birthday* AddBirthday(Birthday*, int,int,int,int,char[30]);//äîáàâëÿåò çàïèñü â òàáëèöó Äíè ðîæäåíèÿ
+void ShowBirthdayList(Birthday*);//Ïîêàçàûâàåò òàáëèöó Äíè ðîæäåíèÿ
+void BirthdayThisMonth(Birthday*, int);//Ïîêàçûâàåò äíè ðîæäåíèÿ òåêóùåãî ìåñÿöà
+void BirthdayFIO(Birthday*);//Ïîêàçûâàåò ïî óêàçàííîé ôàìèëèè äíè ðîæäåíèÿ
+void EditBirthday(Birthday**);//Ðåäàêòèðóåò çàïèñè òàáëèöû Äíè ðîæäåíèÿ
+void AddInputBirthday(Birthday**,int*);//çàíîñèò ââåä¸ííóþ ñ êëàâèàòóðû çàïèñü â òàáëèöó Äíè ðîæäåíèÿ
+
+Celebration* initCelebrationList(int,int,int,char[100]);//Èíèöèàëèçàöèÿ ñïèñêà äëÿ òàáëèöû Ïðàçäíèêè
+Celebration* AddCelebration(Celebration*, int,int,int,char[100]);//äîáàâëÿåò çàïèñü â òàáëèöó Ïðàçäíèêè
+void ShowCelebrationList(Celebration*);//Ïîêàçàûâàåò òàáëèöó Ïðàçäíèêè
+void CelebrationThisMonth(Celebration*, int);//Ïîêàçûâàåò ïðàçäíèêè òåêóùåãî ìåñÿöà
+void EditCelebration(Celebration**);//Ðåäàêòèðóåò çàïèñè òàáëèöû Ïðàçäíèêè
+void AddInputCelebration(Celebration**,int*);//çàíîñèò ââåä¸ííóþ ñ êëàâèàòóðû çàïèñü â òàáëèöó Ïðàçäíèêè
+
+Event* initEventList(int,int,int,int,char[100]);//Èíèöèàëèçàöèÿ ñïèñêà äëÿ òàáëèöû Ñîáûòèÿ
+Event* AddEvent(Event*,int,int,int,int,char[100]);//äîáàâëÿåò çàïèñü â òàáëèöó Ñîáûòèÿ
+void ShowEventList(Event*);//Ïîêàçàûâàåò òàáëèöó Ñîáûòèÿ
+void EventThisMonth(Event*, int, int);//Ïîêàçûâàåò ñîáûòèÿ òåêóùåãî ìåñÿöà
+void EditEvent(Event**);//Ðåäàêòèðóåò çàïèñè òàáëèöû Ñîáûòèÿ
+void AddInputEvent(Event**,int*);//çàíîñèò ââåä¸ííóþ ñ êëàâèàòóðû çàïèñü â òàáëèöó Ñîáûòèÿ
+
+void CelebEventBirthThisMonth(Birthday*,Celebration*,Event*);//Ïîêàçûâàåò çàïèñè äëÿ òåêóùåãî ó âñåõ òàáëèö
+void DateCategoryFIO(Birthday*,Celebration*,Event*);//îòêðûâàåò ìåíþ âûáîðà êîìàíä: ïîêàçàòü çàïèñè ïî êàòåãîðèÿ, ôàìèëèÿì
+void Edit(Birthday**,Celebration**,Event**,int,int,int);//îòêðûâàåò ìåíþ äëÿ âûáîðà òàáëèöû äëÿ ðåäàêòèðîâàíèÿ çàïèñåé
+void Add(Birthday**,Celebration**,Event**,int*,int*,int*);//îòêðûâàåò ìåíþ äëÿ âûáîðà òàáëèöû äëÿ äîáàâëåíèÿ çàïèñåé
+void Delete(Birthday**,Celebration**,Event**,int*,int*,int*);//îòêðûâàåò ìåíþ äëÿ âûáîðà òàáëèöû äëÿ óäàëåíèÿ çàïèñåé
+void DeleteBirthday(Birthday**,int);void DeleteCelebration(Celebration**,int);void DeleteEvent(Event**,int);//óäàëåíèÿ çàïèñè â ñîîòâåòñòâóþùèõ òàáëèöàõ
+
+int ChooseBirthdayId(Birthday*);int ChooseCelebrationId(Celebration*);int ChooseEventId(Event*);//âîçâðàùàåò â ñëó÷àå óäà÷è ââåä¸ííûé ñ êëàâèàòóðû id çàïèñè â ñîîòâåòñòâóþùèõ òàáëèöàõ
+
+bool NotCorrectDate(int,int,int);//ïðîâåðÿåò êîððåêòíîñòü ââåä¸ííîé äàòû
+char * SpaceReplace(char[]);//çàìåíÿåò ïðîáåëû íà '_'
+
+int main() {
+	setlocale(LC_ALL,"Russian");
+
+	SetConsoleCP(866);
+	Birthday* BD=initBirthdayList(-1,-1,-1,-1,"???");
+	Celebration* CL=initCelebrationList(-1,-1,-1,"???");
+	Event* EV=initEventList(-1,-1,-1,-1,"???");
+	int BDcount=0,CLcount=0,EVcount=0;
+	ReadFile(BD,CL,EV,&BDcount,&CLcount,&EVcount);
+	int n=0;
+	while(n==0){
+	n=menu();
+
+	switch(n)
+	{
+		case 1:Add(BD,CL,EV,&BDcount,&CLcount,&EVcount);break;
+		case 2:Edit(BD,CL,EV,BDcount,CLcount,EVcount);break;
+		case 3:Delete(BD,CL,EV,&BDcount,&CLcount,&EVcount);break;
+		case 4:CelebEventBirthThisMonth(BD,CL,EV);break;
+		case 5:DateCategoryFIO(BD,CL,EV);break;
+		case 6:exit(0);break;
+	}
+	n=0;
+	}
+	system("pause");
+	return 0;
+}
+int menu(void)
+{
+	int n=0;
+	while((n<=0)||(n>6))
+	{
+		system("cls");	
+		printf("Áàçà äàííûõ êàëåíäàðü.\n");
+		printf("1) Äîáàâèòü ñîáûòèå, ïðàçäíèê, äåíü ðîæäåíèÿ;\n");
+		printf("2) Ðåäàêòèðîâàíèå çàïèñåé;\n");
+		printf("3) Óäàëåíèå çàïèñåé;\n");
+		printf("4) Ñîáûòèÿ, ïðàçäàíèêè íà òåêóùèé ìåñÿö;\n");
+		printf("5) Äàòû ïî êàòåãîðèÿì, ôàìèëèÿì;\n");
+		printf("6) Âûõîä;\n");
+		printf("Ââåäèòå êîððåêòíî íîìåð êîìàíäû: ");
+		if(scanf("%d",&n)!=1) scanf("%*s");
+	}
+	return n;
+}
+
+ void ReadFile(Birthday **BD,Celebration **CL,Event **EV,int *BDcount,int *CLcount,int *EVcount)
+{
+FILE *f;
+f=fopen("DB.dat", "r");
+if(f==NULL)  {printf("Ôàéë íå íàéäåí");return;}
+int n=0;
+fscanf(f,"%d",&n);*BDcount=n;
+int id,dd,mm,yy,i;char fio[30];
+for(i=1;i<=n;i++)
+{	
+	fscanf(f,"%d%d%d%d%s",&id,&dd,&mm,&yy,&fio);
+	BD=AddBirthday(BD,id,dd,mm,yy,fio);
+}
+fscanf(f,"%d",&n);*CLcount=n;
+char name[100];
+for(i=1;i<=n;i++)
+{
+	fscanf(f,"%d%d%d%s",&id,&dd,&mm,&name);
+	CL=AddCelebration(CL,id,dd,mm,name);
+}
+fscanf(f,"%d",&n);*EVcount=n;
+char description[100];
+for(i=1;i<=n;i++)
+{
+	fscanf(f,"%d%d%d%d%s",&id,&dd,&mm,&yy,&description);
+	EV=AddEvent(EV,id,dd,mm,yy,description);
+}
+
+fclose(f);
+
+}
+
+void SaveFile(Birthday* B,Celebration* C,Event* E,int BDcount,int CLcount,int EVcount)
+{
+FILE *f;
+f=fopen("DB.dat", "w");
+//SetConsoleCP(1251);
+fprintf(f,"%d\n",BDcount);
+ 	Birthday *p;
+  	p = B;p=p->next;
+  	do 
+	{	
+		//printf("%d\t%d\t%d\t%d\t%s\n",p->id, p->day,p->month,p->year,p->fio);
+		 fprintf(f,"%d\t%d\t%d\t%d\t%s\n",p->id, p->day,p->month,p->year,p->fio);
+		//printf("%s\n",p->fio);
+    	p = p->next;
+  	} while (p != NULL);
+
+fprintf(f,"%d\n",CLcount);
+ 	Celebration *pp;
+  	pp = C;pp=pp->next;
+  	do 
+	{
+		fprintf(f,"%d\t%d\t%d\t%s\n",pp->id, pp->day,pp->month,pp->name);
+    	pp = pp->next;
+  	} while (pp != NULL);
+  	
+fprintf(f,"%d\n",EVcount);
+ 	Event *ppp;
+  	ppp = E;ppp=ppp->next;
+  	do 
+	{
+		fprintf(f,"%d\t%d\t%d\t%d\t%s\n",ppp->id, ppp->day,ppp->month,ppp->year,ppp->description);
+    	ppp = ppp->next;
+  	} while (ppp != NULL);
+
+fclose(f);
+}
+
+
+
+
+Birthday* initBirthdayList(int id,int dd,int mm,int yy,char fio[30])
+{
+  Birthday *lst;
+  // âûäåëåíèå ïàìÿòè ïîä êîðåíü ñïèñêà
+  lst = (Birthday*)malloc(sizeof(Birthday));
+  lst->id=id;lst->day=dd;lst->month=mm;lst->year=yy;strcpy(lst->fio,fio);
+  lst->next = NULL; // ýòî ïîñëåäíèé óçåë ñïèñêà
+  return lst;
+}
+Birthday* AddBirthday(Birthday* A, int id,int dd,int mm,int yy,char fio[30])
+{
+  Birthday *temp, *p;
+  temp = (Birthday*)malloc(sizeof(Birthday));
+  p = A->next; // ñîõðàíåíèå óêàçàòåëÿ íà ñëåäóþùèé óçåë
+  A->next = temp; // ïðåäûäóùèé óçåë óêàçûâàåò íà ñîçäàâàåìûé
+  temp->id=id;temp->day=dd;temp->month=mm;temp->year=yy;strcpy(temp->fio,fio);
+  temp->next = p; // ñîçäàííûé óçåë óêàçûâàåò íà ñëåäóþùèé ýëåìåíò
+  return(temp);
+}
+
+void ShowBirthdayList(Birthday* A)
+{
+	printf("id\tÄàòà\tÔÈÎ\n");
+ 	Birthday *p;
+  	p = A;p=p->next;
+  	do 
+	{
+		printf("%d\t%d.%d.%d\t%s\n",p->id, p->day,p->month,p->year,p->fio);
+    	p = p->next;
+  	} while (p != NULL);
+}
+
+void BirthdayThisMonth(Birthday* A, int month)
+{
+	printf("Äíè ðîæäåíèÿ:\n");
+	printf("Äåíü\tÔÈÎ\n");
+ 	Birthday *p;
+  	p = A;
+  	do 
+	{
+    	if(p->month==month) printf("%d\t%s\n", p->day,p->fio);
+    	p = p->next;
+  	} while (p != NULL);
+}
+void BirthdayFIO(Birthday* A)
+{
+
+	printf("Ââåäèòå ôàìèëèþ: ");
+	char str[30];
+	SetConsoleCP(1251);
+	scanf("%s",&str);
+	SetConsoleCP(866);
+	printf("%s\n",str);
+	printf("id\tÄàòà\t\tÔÈÎ\n");
+ 	Birthday *p;
+  	p = A;
+  	do 
+	{
+    	if(strstr (p->fio,str)!=NULL) printf("%d\t%d.%d.%d\t%s\n",p->id, p->day,p->month,p->year,p->fio);
+    	p = p->next;
+  	} while (p != NULL);
+}
+void EditBirthday(Birthday** A)
+{
+int n=0,id=0;bool exists=false;
+while((id<=0))
+{
+printf("Ââåäèòå id: ");
+if(scanf("%d",&id)!=1) scanf("%*s");
+}
+ 	Birthday *p;
+  	p = A;
+  	do 
+	{
+    	if(p->id==id) {
+    	exists=true;
+		break;
+		}
+    	p = p->next;
+  	} while (p != NULL);
+if(!exists) return;
+
+
+	n=0;
+	while((n<=0)||(n>4))
+	{
+		system("cls");	
+		printf("1) Èçìåíèòü äàòó;\n");
+		printf("2) Èçìåíèòü ÔÈÎ;\n");
+		printf("3) Îòìåíà;\n");
+		printf("4) Âûõîä â îñíîâíîå ìåíþ;\n");
+		printf("Ââåäèòå êîððåêòíî íîìåð êîìàíäû: ");
+		if(scanf("%d",&n)!=1) scanf("%*s");
+	}
+	int dd=0,mm=0,yy=0;
+	switch(n)
+	{
+	case 1:{
+		while(NotCorrectDate(dd,mm,yy))
+		{
+			printf("Ââåäèòå ïðàâèëüíûå äåíü, ìåñÿö, ãîä: ");
+			if(scanf("%d",&dd)!=1) scanf("%*s");
+			if(scanf("%d",&mm)!=1) scanf("%*s");
+			if(scanf("%d",&yy)!=1) scanf("%*s");
+		}
+		p->day=dd;p->month=mm;p->year=yy;
+		
+		break;
+		}
+	case 2:{
+		printf("Ââåäèòå ÔÈÎ: ");
+		char str[30];
+		SetConsoleCP(1251);
+		//scanf("%s");
+		fflush(stdin);
+		gets(str);
+		strcpy(str,SpaceReplace(str));
+		//fgets(str, sizeof(str), stdin);
+		strcpy(p->fio,str);
+		SetConsoleCP(866);
+		break;
+		}
+	case 3:break;
+	case 4:break;
+	}
+	system("pause");
+
+}
+
+
+
+
+Celebration* initCelebrationList(int id,int dd,int mm,char name[100])
+{
+  Celebration *lst;
+  // âûäåëåíèå ïàìÿòè ïîä êîðåíü ñïèñêà
+  lst = (Celebration*)malloc(sizeof(Celebration));
+  lst->id=id;lst->day=dd;lst->month=mm;strcpy(lst->name,name);
+  lst->next = NULL; // ýòî ïîñëåäíèé óçåë ñïèñêà
+  return lst;
+}
+Celebration* AddCelebration(Celebration* A, int id,int dd,int mm,char name[100])
+{
+  Celebration *temp, *p;
+  temp = (Celebration*)malloc(sizeof(Celebration));
+  p = A->next; // ñîõðàíåíèå óêàçàòåëÿ íà ñëåäóþùèé óçåë
+  A->next = temp; // ïðåäûäóùèé óçåë óêàçûâàåò íà ñîçäàâàåìûé
+  temp->id=id;temp->day=dd;temp->month=mm;strcpy(temp->name,name);
+  temp->next = p; // ñîçäàííûé óçåë óêàçûâàåò íà ñëåäóþùèé ýëåìåíò
+  return(temp);
+}
+void ShowCelebrationList(Celebration* A)
+{
+	printf("id\tÄàòà\tÔÈÎ\n");
+ 	Celebration *p;
+  	p = A;p=p->next;
+  	do 
+	{
+		printf("%d\t%d.%d\t%s\n",p->id, p->day,p->month,p->name);
+    	p = p->next;
+  	} while (p != NULL);
+}
+void CelebrationThisMonth(Celebration* A, int month)
+{
+	printf("Ïðàçäíèêè:\n");
+	printf("Äåíü\tÍàçâàíèå\n");
+ 	Celebration *p;
+  	p = A;
+  	do 
+	{
+    	if(p->month==month) printf("%d\t%s\n", p->day,p->name);
+    	p = p->next;
+  	} while (p != NULL);
+}
+
+void EditCelebration(Celebration** A)
+{
+int n=0,id=0;bool exists=false;
+while((id<=0))
+{
+printf("Ââåäèòå id: ");
+if(scanf("%d",&id)!=1) scanf("%*s");
+}
+ 	Celebration *p;
+  	p = A;
+  	do 
+	{
+    	if(p->id==id) {
+    	exists=true;
+		break;
+		}
+    	p = p->next;
+  	} while (p != NULL);
+if(!exists) return;
+
+
+	n=0;
+	while((n<=0)||(n>4))
+	{
+		system("cls");	
+		printf("1) Èçìåíèòü äàòó;\n");
+		printf("2) Èçìåíèòü íàçâàíèå;\n");
+		printf("3) Îòìåíà;\n");
+		printf("4) Âûõîä â îñíîâíîå ìåíþ;\n");
+		printf("Ââåäèòå êîððåêòíî íîìåð êîìàíäû: ");
+		if(scanf("%d",&n)!=1) scanf("%*s");
+	}
+	int dd=0,mm=0,yy=0;
+	switch(n)
+	{
+	case 1:{
+		while(NotCorrectDate(dd,mm,yy))
+		{
+			printf("Ââåäèòå ïðàâèëüíûå äåíü, ìåñÿö: ");
+			if(scanf("%d",&dd)!=1) scanf("%*s");
+			if(scanf("%d",&mm)!=1) scanf("%*s");
+		}
+		p->day=dd;p->month=mm;
+		
+		break;
+		}
+	case 2:{
+		printf("Ââåäèòå íàçâàíèå: ");
+		char str[100];
+		SetConsoleCP(1251);
+		//scanf("%s");
+		fflush(stdin);
+		gets(str);
+		strcpy(str,SpaceReplace(str));
+		//fgets(str, sizeof(str), stdin);
+		strcpy(p->name,str);
+		SetConsoleCP(866);
+		break;
+		}
+	case 3:break;
+	case 4:break;
+	}
+	system("pause");
+
+}
+
+Event* initEventList(int id,int dd,int mm,int yy,char description[100])
+{
+  Event *lst;
+  // âûäåëåíèå ïàìÿòè ïîä êîðåíü ñïèñêà
+  lst = (Event*)malloc(sizeof(Event));
+  lst->id=id;lst->day=dd;lst->month=mm;lst->year=yy;strcpy(lst->description,description);
+  lst->next = NULL; // ýòî ïîñëåäíèé óçåë ñïèñêà
+  return lst;
+}
+Event* AddEvent(Event* A, int id,int dd,int mm,int yy,char description[100])
+{
+  Event *temp, *p;
+  temp = (Event*)malloc(sizeof(Event));
+  p = A->next; // ñîõðàíåíèå óêàçàòåëÿ íà ñëåäóþùèé óçåë
+  A->next = temp; // ïðåäûäóùèé óçåë óêàçûâàåò íà ñîçäàâàåìûé
+  temp->id=id;temp->day=dd;temp->month=mm;temp->year=yy;strcpy(temp->description,description);
+  temp->next = p; // ñîçäàííûé óçåë óêàçûâàåò íà ñëåäóþùèé ýëåìåíò
+  return(temp);
+}
+
+void ShowEventList(Event* A)
+{
+	printf("id\tÄàòà\tÔÈÎ\n");
+ 	Event *p;
+  	p = A;p=p->next;
+  	do 
+	{
+		printf("%d\t%d.%d.%d\t%s\n",p->id, p->day,p->month,p->year,p->description);
+    	p = p->next;
+  	} while (p != NULL);
+}
+
+void EventThisMonth(Event* A, int month, int year)
+{
+ 
+	printf("Ñîáûòèÿ:\n");
+	printf("Äåíü\tÎïèñàíèå\n");
+ 	Event *p;
+  	p = A;
+  	do 
+	{
+    	if((p->month==month)&&(p->year==year)) printf("%d\t%s\n", p->day,p->description);
+    	p = p->next;
+  	} while (p != NULL);
+}
+
+void EditEvent(Event** A)
+{
+int n=0,id=0;bool exists=false;
+while((id<=0))
+{
+printf("Ââåäèòå id: ");
+if(scanf("%d",&id)!=1) scanf("%*s");
+}
+ 	Event *p;
+  	p = A;
+  	do 
+	{
+    	if(p->id==id) {
+    	exists=true;
+		break;
+		}
+    	p = p->next;
+  	} while (p != NULL);
+if(!exists) return;
+
+
+	n=0;
+	while((n<=0)||(n>4))
+	{
+		system("cls");	
+		printf("1) Èçìåíèòü äàòó;\n");
+		printf("2) Èçìåíèòü îïèñàíèå;\n");
+		printf("3) Îòìåíà;\n");
+		printf("4) Âûõîä â îñíîâíîå ìåíþ;\n");
+		printf("Ââåäèòå êîððåêòíî íîìåð êîìàíäû: ");
+		if(scanf("%d",&n)!=1) scanf("%*s");
+	}
+	int dd=0,mm=0,yy=0;
+	switch(n)
+	{
+	case 1:{
+		while(NotCorrectDate(dd,mm,yy))
+		{
+			printf("Ââåäèòå ïðàâèëüíûå äåíü, ìåñÿö, ãîä: ");
+			if(scanf("%d",&dd)!=1) scanf("%*s");
+			if(scanf("%d",&mm)!=1) scanf("%*s");
+			if(scanf("%d",&yy)!=1) scanf("%*s");
+		}
+		p->day=dd;p->month=mm;p->year=yy;
+		
+		break;
+		}
+	case 2:{
+		printf("Ââåäèòå ÔÈÎ: ");
+		char str[30];
+		SetConsoleCP(1251);
+		//scanf("%s");
+		fflush(stdin);
+		gets(str);
+		strcpy(str,SpaceReplace(str));
+		//fgets(str, sizeof(str), stdin);
+		strcpy(p->description,str);
+		SetConsoleCP(866);
+		break;
+		}
+	case 3:break;
+	case 4:break;
+	}
+	system("pause");
+
+}
+
+
+void CelebEventBirthThisMonth(Birthday* B ,Celebration* C ,Event* E)
+{
+time_t t;time(&t);localtime(&t);
+int month=localtime(&t)->tm_mon+1;
+int year=localtime(&t)->tm_year+1900;
+BirthdayThisMonth(B,month);
+CelebrationThisMonth(C,month);
+EventThisMonth(E,month,year);	
+system("pause");
+}
+
+void DateCategoryFIO(Birthday *B,Celebration *C,Event *E)
+{
+	int n=0;
+	while((n<=0)||(n>5))
+	{
+		system("cls");	
+		printf("1) Ïîêàçàòü äíè ðîæäåíèÿ;\n");
+		printf("2) Ïîêàçàòü ïðàçäíèêè;\n");
+		printf("3) Ïîêàçàòü ñîáûòèÿ;\n");
+		printf("4) Ââåñòè ôàìèëèþ;\n");
+		printf("5) Âûõîä â îñíîâíîå ìåíþ;\n");
+		printf("Ââåäèòå êîððåêòíî íîìåð êîìàíäû: ");
+		if(scanf("%d",&n)!=1) scanf("%*s");
+	}
+	switch(n)
+	{
+	case 1:ShowBirthdayList(B);break;
+	case 2:ShowCelebrationList(C);break;
+	case 3:ShowEventList(E);break;
+	case 4:BirthdayFIO(B);break;
+	case 5:;break;
+	}
+	system("pause");		
+}
+
+void Edit(Birthday** B,Celebration** C,Event** E,int BDcount,int CLcount,int EVcount)
+{
+int n=0;
+while(n!=4)
+{
+	while((n<=0)||(n>4))
+	{
+		system("cls");	
+		printf("1) Ðåäàêòèðîâàòü äíè ðîæäåíèÿ;\n");
+		printf("2) Ðåäàêòèðîâàòü ïðàçäíèêè;\n");
+		printf("3) Ðåäàêòèðîâàòü ñîáûòèÿ;\n");
+		printf("4) Âûõîä â îñíîâíîå ìåíþ;\n");
+		printf("Ââåäèòå êîððåêòíî íîìåð êîìàíäû: ");
+		if(scanf("%d",&n)!=1) scanf("%*s");
+	}
+	switch(n)
+	{
+		case 1:ShowBirthdayList(B);EditBirthday(B);ShowBirthdayList(B);break;
+		case 2:ShowCelebrationList(C);EditCelebration(C);ShowCelebrationList(C);break;
+		case 3:ShowEventList(E);EditEvent(E);ShowEventList(E);break;
+		case 4:return;break;
+	}
+	//SaveFile(B->next,C->next,E->next,BDcount,CLcount,EVcount);
+	SaveFile(B,C,E,BDcount,CLcount,EVcount);
+	n=0;
+	system("pause");
+	}
+}
+
+void Add(Birthday** B,Celebration** C,Event** E,int* BDcount,int* CLcount,int* EVcount)
+{
+int n=0;
+while(n!=4)
+{
+
+	while((n<=0)||(n>4))
+	{
+		system("cls");	
+		printf("1) Äîáàâèòü äåíü ðîæäåíèÿ;\n");
+		printf("2) Äîáàâèòü ïðàçäíèê;\n");
+		printf("3) Äîáàâèòü ñîáûòèå;\n");
+		printf("4) Âûõîä â îñíîâíîå ìåíþ;\n");
+		printf("Ââåäèòå êîððåêòíî íîìåð êîìàíäû: ");
+		if(scanf("%d",&n)!=1) scanf("%*s");
+	}
+	switch(n)
+	{
+		case 1:AddInputBirthday(B,&(*BDcount));ShowBirthdayList(B);break;
+		case 2:AddInputCelebration(C,&(*CLcount));ShowCelebrationList(C);break;
+		case 3:AddInputEvent(E,&(*EVcount));ShowEventList(E);break;
+		case 4:return;break;
+	}
+	//SaveFile(B->next,C->next,E->next,*BDcount,*CLcount,*EVcount);
+	SaveFile(B,C,E,*BDcount,*CLcount,*EVcount);
+	system("pause");
+	n=0;
+}
+}
+
+bool NotCorrectDate(int d,int m ,int y)
+{
+return (m>12)||(m<=0)||(d<=0)||(d>31)||(m==2)&&((y%4==0)&&(d>28)||(d>29))||(d==31)&&((m==9)||(m==11)||(m==4)||(m==6));
+}
+
+void AddInputBirthday(Birthday** A,int* BDCount)
+{
+Birthday *p,*g;int max=0;
+p = A;
+  	do 
+	{	
+		if(p->id>max) max=p->id;
+		g=p;
+    	p = p->next;
+  	} while (p!= NULL);
+  	p=g;
+  	int dd=0,mm=0,yy=0;
+	while(NotCorrectDate(dd,mm,yy))
+		{
+			printf("Ââåäèòå ïðàâèëüíûå äåíü, ìåñÿö, ãîä: ");
+			if(scanf("%d",&dd)!=1) scanf("%*s");
+			if(scanf("%d",&mm)!=1) scanf("%*s");
+			if(scanf("%d",&yy)!=1) scanf("%*s");
+		}
+		printf("Ââåäèòå ÔÈÎ: ");
+		char str[30];
+		SetConsoleCP(1251);
+		fflush(stdin);
+		gets(str);
+		strcpy(str,SpaceReplace(str));
+		SetConsoleCP(866);
+p=AddBirthday(p,max+1,dd,mm,yy,str);
+(*BDCount)++; 	
+}
+
+void AddInputCelebration(Celebration** A,int* CLCount)
+{
+Celebration *p,*g;int max=0;
+p = A;
+  	do 
+	{	
+		if(p->id>max) max=p->id;
+		g=p;
+    	p = p->next;
+  	} while (p != NULL);
+  	p=g;
+  	int dd=0,mm=0,yy=0;
+	while(NotCorrectDate(dd,mm,yy))
+		{
+			printf("Ââåäèòå ïðàâèëüíûå äåíü, ìåñÿö: ");
+			if(scanf("%d",&dd)!=1) scanf("%*s");
+			if(scanf("%d",&mm)!=1) scanf("%*s");
+		}
+		printf("Ââåäèòå íàçâàíèå: ");
+		char str[100];
+		SetConsoleCP(1251);
+		fflush(stdin);
+		gets(str);
+		strcpy(str,SpaceReplace(str));
+		SetConsoleCP(866);
+p=AddCelebration(p,max+1,dd,mm,str);
+(*CLCount)++; 	
+}
+
+void AddInputEvent(Event** A,int *EVCount)
+{
+Event *p,*g;int max=0;
+p = A;
+  	do 
+	{	
+		if(p->id>max) max=p->id;
+		g=p;
+    	p = p->next;
+  	} while (p != NULL);
+  	p=g;
+  	int dd=0,mm=0,yy=0;
+	while(NotCorrectDate(dd,mm,yy))
+		{
+			printf("Ââåäèòå ïðàâèëüíûå äåíü, ìåñÿö, ãîä: ");
+			if(scanf("%d",&dd)!=1) scanf("%*s");
+			if(scanf("%d",&mm)!=1) scanf("%*s");
+			if(scanf("%d",&yy)!=1) scanf("%*s");
+		}
+		printf("Ââåäèòå îïèñàíèå: ");
+		char str[30];
+		SetConsoleCP(1251);
+		fflush(stdin);
+		gets(str);
+		strcpy(str,SpaceReplace(str));
+		SetConsoleCP(866);
+p=AddEvent(p,max+1,dd,mm,yy,str);
+(*EVCount)++; 	
+}
+
+void Delete(Birthday** B,Celebration** C,Event** E,int *BDcount,int *CLcount,int *EVcount)
+{
+int n=0;
+while(n!=4)
+{
+	while((n<=0)||(n>4))
+	{
+		system("cls");	
+		printf("1) Óäàëèòü äåíü ðîæäåíèÿ;\n");
+		printf("2) Óäàëèòü ïðàçäíèê;\n");
+		printf("3) Óäàëèòü ñîáûòèå;\n");
+		printf("4) Âûõîä â îñíîâíîå ìåíþ;\n");
+		printf("Ââåäèòå êîððåêòíî íîìåð êîìàíäû: ");
+		if(scanf("%d",&n)!=1) scanf("%*s");
+	}
+	int id=0;
+	switch(n)
+	{
+		case 1:ShowBirthdayList(B);id=ChooseBirthdayId(B);if(id!=-1){DeleteBirthday(B,id);ShowBirthdayList(B);(*BDcount)--;}break;
+		case 2:ShowCelebrationList(C);id=ChooseCelebrationId(C);if(id!=-1){DeleteCelebration(C,id);ShowCelebrationList(C);(*CLcount)--;}break;
+		case 3:ShowEventList(E);id=ChooseEventId(E);if(id!=-1){DeleteEvent(E,id);ShowEventList(E);(*EVcount)--;}break;
+		case 4:return;break;
+	}
+	
+	//SaveFile(B->next,C->next,E->next,*BDcount,*CLcount,*EVcount);
+	SaveFile(B,C,E,*BDcount,*CLcount,*EVcount);
+	system("pause");
+	n=0;
+}
+
+}
+
+void DeleteBirthday(Birthday** A,int id)
+{
+  Birthday *temp,*g;
+  temp = A;
+  while (temp->id != id)
+  { 
+    g=temp;
+    temp = temp->next;
+  }
+  g->next = temp->next; 
+  free(temp); 
+}
+
+
+void DeleteCelebration(Celebration** A,int id)
+{
+  Celebration *temp,*g;
+  temp = A;
+  while (temp->id != id)
+  { 
+    g=temp;
+    temp = temp->next;
+  }
+  g->next = temp->next; 
+  free(temp); 
+}
+void DeleteEvent(Event** A,int id)
+{
+  Event *temp,*g;
+  temp = A;
+  while (temp->id != id)
+  { 
+    g=temp;
+    temp = temp->next;
+  }
+  g->next = temp->next; 
+  free(temp); 
+}
+
+
+
+
+
+int ChooseBirthdayId(Birthday* A)
+{
+int n=0,id=-1;bool exists=false;
+while(id<=0)
+{
+printf("Ââåäèòå id: ");
+if(scanf("%d",&id)!=1) scanf("%*s");
+}
+ 	Birthday *p;
+  	p = A;
+  	do 
+	{
+    	if(p->id==id) {exists=true;break;}
+    	p = p->next;
+  	} while (p != NULL);
+if(!exists) return -1;else return id;
+}
+
+int ChooseCelebrationId(Celebration* A)
+{
+int n=0,id=0;bool exists=false;
+while(id<=0)
+{
+printf("Ââåäèòå id: ");
+if(scanf("%d",&id)!=1) scanf("%*s");
+}
+ 	Celebration *p;
+  	p = A;
+  	do 
+	{
+    	if(p->id==id) {exists=true;break;}
+    	p = p->next;
+  	} while (p != NULL);
+if(!exists) return -1;else return id;
+}
+
+int ChooseEventId(Event* A)
+{
+int n=0,id=0;bool exists=false;
+while(id<=0)
+{
+printf("Ââåäèòå id: ");
+if(scanf("%d",&id)!=1) scanf("%*s");
+}
+ 	Event *p;
+  	p = A;
+  	do 
+	{
+    	if(p->id==id) { exists=true;break;}
+    	p = p->next;
+  	} while (p != NULL);
+if(!exists) return -1;else return id;
+}
+
+char * SpaceReplace(char s[])
+{
+char str[50];
+strcpy(str,s);
+while(strchr(str,' ')!=NULL)
+{
+char *i;
+	//printf("%s\n",str);
+ i=strchr(str,' ');
+ if(i!=NULL) *i='_';
+}
+return str;
+}
