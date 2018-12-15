@@ -63,7 +63,7 @@ void EventThisMonth(Event*, int, int);//Показывает события те
 void EditEvent(Event*);//Редактирует записи таблицы События
 void AddInputEvent(Event*, int*);//заносит введённую с клавиатуры запись в таблицу События
 
-void CelebEventBirthThisMonth(Birthday*, Celebration*, Event*);//Показывает записи для текущего месяца у всех таблиц
+void CelebEventBirthThisMonth(Birthday*, Celebration*, Event*);//Показывает записи для текущего у всех таблиц
 void DateCategoryFIO(Birthday*, Celebration*, Event*);//открывает меню выбора команд: показать записи по категория, фамилиям
 void Edit(Birthday*, Celebration*, Event*, int, int, int);//открывает меню для выбора таблицы для редактирования записей
 void Add(Birthday*, Celebration*, Event*, int*, int*, int*);//открывает меню для выбора таблицы для добавления записей
@@ -161,9 +161,11 @@ void SaveFile(Birthday* B, Celebration* C, Event* E, int BDcount, int CLcount, i
 	p = B;p = p->next;
 	do
 	{
-		//printf("%d\t%d\t%d\t%d\t%s\n",p->id, p->day,p->month,p->year,p->fio);
+		if (p == NULL)
+		{
+			break;
+		}
 		fprintf(f, "%d\t%d\t%d\t%d\t%s\n", p->id, p->day, p->month, p->year, p->fio);
-		//printf("%s\n",p->fio);
 		p = p->next;
 	} while (p != NULL);
 
@@ -172,6 +174,10 @@ void SaveFile(Birthday* B, Celebration* C, Event* E, int BDcount, int CLcount, i
 	pp = C;pp = pp->next;
 	do
 	{
+		if (pp == NULL)
+		{
+			break;
+		}
 		fprintf(f, "%d\t%d\t%d\t%s\n", pp->id, pp->day, pp->month, pp->name);
 		pp = pp->next;
 	} while (pp != NULL);
@@ -181,6 +187,10 @@ void SaveFile(Birthday* B, Celebration* C, Event* E, int BDcount, int CLcount, i
 	ppp = E;ppp = ppp->next;
 	do
 	{
+		if (ppp == NULL)
+		{
+			break;
+		}
 		fprintf(f, "%d\t%d\t%d\t%d\t%s\n", ppp->id, ppp->day, ppp->month, ppp->year, ppp->description);
 		ppp = ppp->next;
 	} while (ppp != NULL);
@@ -218,6 +228,11 @@ void ShowBirthdayList(Birthday* A)
 	p = A;p = p->next;
 	do
 	{
+		if (p == NULL)
+		{
+			printf("Нет Дней Рождения\n");
+			break;
+		}
 		printf("%d\t%d.%d.%d\t%s\n", p->id, p->day, p->month, p->year, p->fio);
 		p = p->next;
 	} while (p != NULL);
@@ -251,6 +266,7 @@ void BirthdayFIO(Birthday* A)
 		p = p->next;
 	} while (p != NULL);
 }
+
 void EditBirthday(Birthday* A)
 {
 	int n = 0, id = 0;bool exists = false;
@@ -279,7 +295,6 @@ void EditBirthday(Birthday* A)
 		printf("1) Изменить дату;\n");
 		printf("2) Изменить ФИО;\n");
 		printf("3) Отмена;\n");
-		printf("4) Выход в основное меню;\n");
 		printf("Введите корректно номер команды: ");
 		if (scanf("%d", &n) != 1) scanf("%*s");
 	}
@@ -302,16 +317,13 @@ void EditBirthday(Birthday* A)
 		printf("Введите ФИО: ");
 		getchar();
 		char str[100];
-		//scanf("%s");
 		fflush(stdin);
 		gets(str);
 		strcpy(str, SpaceReplace(str));
-		//fgets(str, sizeof(str), stdin);
 		strcpy(p->fio, str);
 		break;
 	}
 	case 3:break;
-	case 4:break;
 	}
 	system("pause");
 
@@ -341,11 +353,16 @@ Celebration* AddCelebration(Celebration* A, int id, int dd, int mm, char name[10
 }
 void ShowCelebrationList(Celebration* A)
 {
-	printf("id\tДата\tФИО\n");
+	printf("id\tДата\tПраздник\n");
 	Celebration *p;
 	p = A;p = p->next;
 	do
 	{
+		if (p == NULL)
+		{
+			printf("Нет Праздников\n");
+			break;
+		}
 		printf("%d\t%d.%d\t%s\n", p->id, p->day, p->month, p->name);
 		p = p->next;
 	} while (p != NULL);
@@ -413,11 +430,9 @@ void EditCelebration(Celebration* A)
 		printf("Введите название: ");
 		getchar();
 		char str[100];
-		//scanf("%s");
 		fflush(stdin);
 		gets(str);
 		strcpy(str, SpaceReplace(str));
-		//fgets(str, sizeof(str), stdin);
 		strcpy(p->name, str);
 		break;
 	}
@@ -455,6 +470,11 @@ void ShowEventList(Event* A)
 	p = A;p = p->next;
 	do
 	{
+		if (p == NULL)
+		{
+			printf("Нет Событий\n");
+			break;
+		}
 		printf("%d\t%d.%d.%d\t%s\n", p->id, p->day, p->month, p->year, p->description);
 		p = p->next;
 	} while (p != NULL);
@@ -525,11 +545,9 @@ void EditEvent(Event* A)
 		printf("Введите событие: ");
 		getchar();
 		char str[30];
-		//scanf("%s");
 		fflush(stdin);
 		gets(str);
 		strcpy(str, SpaceReplace(str));
-		//fgets(str, sizeof(str), stdin);
 		strcpy(p->description, str);
 		break;
 	}
@@ -599,7 +617,6 @@ void Edit(Birthday* B, Celebration* C, Event* E, int BDcount, int CLcount, int E
 		case 3:ShowEventList(E);EditEvent(E);ShowEventList(E);break;
 		case 4:return;break;
 		}
-		//SaveFile(B->next,C->next,E->next,BDcount,CLcount,EVcount);
 		SaveFile(B, C, E, BDcount, CLcount, EVcount);
 		n = 0;
 		system("pause");
@@ -629,7 +646,6 @@ void Add(Birthday* B, Celebration* C, Event* E, int* BDcount, int* CLcount, int*
 		case 3:AddInputEvent(E, &(*EVcount));ShowEventList(E);break;
 		case 4:return;break;
 		}
-		//SaveFile(B->next,C->next,E->next,*BDcount,*CLcount,*EVcount);
 		SaveFile(B, C, E, *BDcount, *CLcount, *EVcount);
 		system("pause");
 		n = 0;
@@ -745,13 +761,12 @@ void Delete(Birthday* B, Celebration* C, Event* E, int *BDcount, int *CLcount, i
 		int id = 0;
 		switch (n)
 		{
-		case 1:ShowBirthdayList(B);id = ChooseBirthdayId(B);if (id != -1) { DeleteBirthday(B, id);ShowBirthdayList(B);(*BDcount)--; }break;
-		case 2:ShowCelebrationList(C);id = ChooseCelebrationId(C);if (id != -1) { DeleteCelebration(C, id);ShowCelebrationList(C);(*CLcount)--; }break;
-		case 3:ShowEventList(E);id = ChooseEventId(E);if (id != -1) { DeleteEvent(E, id);ShowEventList(E);(*EVcount)--; }break;
+		case 1:if (*BDcount == 0) { printf("Нет дней рождения\n"); break; } ShowBirthdayList(B);id = ChooseBirthdayId(B);if (id != -1) { DeleteBirthday(B, id);ShowBirthdayList(B);(*BDcount)--; }break;
+		case 2:if (*CLcount == 0) { printf("Нет праздников\n"); break; } ShowCelebrationList(C);id = ChooseCelebrationId(C);if (id != -1) { DeleteCelebration(C, id);ShowCelebrationList(C);(*CLcount)--; }break;
+		case 3:if (*EVcount == 0) { printf("Нет событий\n"); break; } ShowEventList(E);id = ChooseEventId(E);if (id != -1) { DeleteEvent(E, id);ShowEventList(E);(*EVcount)--; }break;
 		case 4:return;break;
 		}
 
-		//SaveFile(B->next,C->next,E->next,*BDcount,*CLcount,*EVcount);
 		SaveFile(B, C, E, *BDcount, *CLcount, *EVcount);
 		system("pause");
 		n = 0;
@@ -863,7 +878,6 @@ char * SpaceReplace(char s[])
 	while (strchr(str, ' ') != NULL)
 	{
 		char *i;
-		//printf("%s\n",str);
 		i = strchr(str, ' ');
 		if (i != NULL) *i = '_';
 	}
